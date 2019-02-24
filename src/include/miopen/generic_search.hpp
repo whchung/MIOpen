@@ -438,6 +438,13 @@ auto GenericSearch(const Solver s,
                     }
                 }
             }
+            MIOPEN_LOG_I('#' << n_current << '/' << n_failed << '/' << n_runs_total
+                             << ' '
+                             << elapsed_time
+                             << " < "
+                             << best_time
+                             << ' '
+                             << current_config);
         }
 
         if(ret != 0)
