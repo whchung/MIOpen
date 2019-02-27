@@ -386,12 +386,21 @@ auto GenericSearch(const Solver s,
                                           current_solution,
                                           elapsed_time);
         }
-        MIOPEN_LOG_I("##" << n_current << '/' << n_failed << '/' << n_runs_total << ' '
-                          << elapsed_time
-                          << " < "
-                          << best_time
-                          << ' '
-                          << current_config);
+        MIOPEN_LOG_I("##"
+                     << "(n_current,  n_failed, n_runs_total):  "
+                     << n_current
+                     << '/'
+                     << n_failed
+                     << '/'
+                     << n_runs_total
+                     << ' '
+                     << "elapsed_time: "
+                     << elapsed_time
+                     << ", "
+                     << "best_time: "
+                     << best_time
+                     << ", "
+                     << current_config);
 
         if(ret == 0)
         {
@@ -426,13 +435,22 @@ auto GenericSearch(const Solver s,
                     elapsed_time /= 5;
                     if(elapsed_time < best_time)
                     {
-                        MIOPEN_LOG_I('#' << n_current << '/' << n_failed << '/' << n_runs_total
-                                         << ' '
-                                         << elapsed_time
-                                         << " < "
-                                         << best_time
-                                         << ' '
-                                         << current_config);
+                        MIOPEN_LOG_I("#"
+                                     << "(n_current,  n_failed, n_runs_total):  "
+                                     << n_current
+                                     << '/'
+                                     << n_failed
+                                     << '/'
+                                     << n_runs_total
+                                     << ' '
+                                     << "elapsed_time: "
+                                     << elapsed_time
+                                     << ",  "
+                                     << "best_time: "
+                                     << best_time
+                                     << ", "
+                                     << current_config);
+
                         best_config = current_config;
                         best_time   = elapsed_time;
                         n_best      = n_current;
