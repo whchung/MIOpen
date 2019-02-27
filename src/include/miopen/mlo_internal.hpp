@@ -58,6 +58,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <miopen/config.h>
 
 #if MIOPEN_BACKEND_OPENCL
+#include <miopen/oclkernel.hpp>
+#include <miopen/clhelper.hpp>
+#include <miopen/ocldeviceinfo.hpp>
+#endif
+#include <miopen/db_path.hpp>
+#include <miopen/handle.hpp>
+#include <miopen/problem_description.hpp>
+
+#if MIOPEN_BACKEND_OPENCL
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -101,17 +110,6 @@ using mlo_kernel_info = std::tuple<const std::string,
                                    const std::vector<size_t>,
                                    const std::vector<size_t>>;
 
-#if MIOPEN_BACKEND_OPENCL
-#include <miopen/oclkernel.hpp>
-#include <miopen/clhelper.hpp>
-#include <miopen/ocldeviceinfo.hpp>
-#endif
-#include <miopen/tensor.hpp>
-#include <miopen/handle.hpp>
-#include <miopen/db_path.hpp>
-#include <miopen/db.hpp>
-#include <miopen/problem_description.hpp>
-
 inline int mloLg2(int v)
 {
     auto ret = static_cast<int>(std::ceil(std::log(v) / std::log(2)));
@@ -135,6 +133,9 @@ enum class rocm_meta_version
 };
 
 namespace miopen {
+
+struct TensorDescriptor;
+class MultiFileDb;
 
 template <class TInstance>
 class StaticContainer
@@ -685,6 +686,22 @@ struct mlo_construct_winograd : mlo_construct_direct2D
                            bool do_bias = false)
         : mlo_construct_direct2D(in, weights, out, conv, dir, do_bias)
     {
+    }
+
+    miopen::solver::ConvSolution FindSolution();
+};
+
+struct mlo_construct_winograd_wrw : mlo_construct_winograd
+{
+    mlo_construct_winograd_wrw(const miopen::TensorDescriptor& in,
+                               const miopen::TensorDescriptor& weights,
+                               const miopen::TensorDescriptor& out,
+                               const miopen::ConvolutionDescriptor& conv,
+                               int, // dir unused, fixed to 0 (backward)
+                               bool do_bias = false)
+        : mlo_construct_winograd(in, weights, out, conv, 0, do_bias)
+    {
+        _search_params.direction.SetBackwardWrW();
     }
 
     miopen::solver::ConvSolution FindSolution();
