@@ -387,7 +387,7 @@ auto GenericSearch(const Solver s,
                                           elapsed_time);
         }
         MIOPEN_LOG_I("##"
-                     << "(n_current,  n_failed, n_runs_total):  "
+                     << "(n_current, n_failed, n_runs_total):  "
                      << n_current
                      << '/'
                      << n_failed
@@ -436,7 +436,7 @@ auto GenericSearch(const Solver s,
                     if(elapsed_time < best_time)
                     {
                         MIOPEN_LOG_I("#"
-                                     << "(n_current,  n_failed, n_runs_total):  "
+                                     << "(n_current, n_failed, n_runs_total):  "
                                      << n_current
                                      << '/'
                                      << n_failed
@@ -445,7 +445,7 @@ auto GenericSearch(const Solver s,
                                      << ' '
                                      << "elapsed_time: "
                                      << elapsed_time
-                                     << ",  "
+                                     << ", "
                                      << "best_time: "
                                      << best_time
                                      << ", "
