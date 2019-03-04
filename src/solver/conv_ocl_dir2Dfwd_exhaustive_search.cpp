@@ -513,6 +513,10 @@ ConvOclDirectFwdLegacyExhaustiveSearch::SearchImpl(const ConvolutionContext& par
 
                         if(processing_time < min_proc_time)
                         {
+                            MIOPEN_LOG_I('#' << run_counter << ' ' << processing_time << " < "
+                                             << min_proc_time
+                                             << ' '
+                                             << result);
                             min_proc_time = processing_time;
                             candidate     = result;
                         }
@@ -667,6 +671,11 @@ ConvOclDirectFwdLegacyExhaustiveSearch::SearchImpl(const ConvolutionContext& par
 
                                     if(processing_time < min_proc_time)
                                     {
+                                        MIOPEN_LOG_I('#' << run_counter << ' ' << processing_time
+                                                         << " < "
+                                                         << min_proc_time
+                                                         << ' '
+                                                         << result);
                                         min_proc_time = processing_time;
                                         candidate     = result;
                                     }
