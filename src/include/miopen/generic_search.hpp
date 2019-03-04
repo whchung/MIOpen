@@ -393,11 +393,9 @@ auto GenericSearch(const Solver s,
                      << n_failed
                      << '/'
                      << n_runs_total
-                     << ' '
-                     << "elapsed_time: "
+                     << " elapsed_time: "
                      << elapsed_time
-                     << ", "
-                     << "best_time: "
+                     << ", best_time: "
                      << best_time
                      << ", "
                      << current_config);
@@ -435,21 +433,16 @@ auto GenericSearch(const Solver s,
                     elapsed_time /= 5;
                     if(elapsed_time < best_time)
                     {
-                        MIOPEN_LOG_I2("#"
-                                      << "(n_current, n_failed, n_runs_total):  "
-                                      << n_current
-                                      << '/'
-                                      << n_failed
-                                      << '/'
-                                      << n_runs_total
-                                      << ' '
-                                      << "elapsed_time: "
-                                      << elapsed_time
-                                      << ", "
-                                      << "best_time: "
-                                      << best_time
-                                      << ", "
-                                      << current_config);
+                        MIOPEN_LOG_I2("#(n_current, n_failed, n_runs_total):  " << n_current << '/'
+                                                                                << n_failed
+                                                                                << '/'
+                                                                                << n_runs_total
+                                                                                << " elapsed_time: "
+                                                                                << elapsed_time
+                                                                                << ", best_time: "
+                                                                                << best_time
+                                                                                << ", "
+                                                                                << current_config);
 
                         best_config = current_config;
                         best_time   = elapsed_time;
