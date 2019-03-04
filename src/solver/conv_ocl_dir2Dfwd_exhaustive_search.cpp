@@ -497,19 +497,17 @@ ConvOclDirectFwdLegacyExhaustiveSearch::SearchImpl(const ConvolutionContext& par
                         }
 
                         is_passed = true;
-                        MIOPEN_LOG_T("##"
-                                     << "(n_current, n_failed, n_runs_total): "
-                                     << run_counter
-                                     << " / "
-                                     << failed_counter
-                                     << " / "
-                                     << total_runs
-                                     << " elapsed_time: "
-                                     << processing_time
-                                     << " best_time: "
-                                     << processing_time
-                                     << ", "
-                                     << result);
+                        MIOPEN_LOG_T("##(n_current, n_failed, n_runs_total): " << run_counter
+                                                                               << " / "
+                                                                               << failed_counter
+                                                                               << " / "
+                                                                               << total_runs
+                                                                               << " elapsed_time: "
+                                                                               << processing_time
+                                                                               << " best_time: "
+                                                                               << processing_time
+                                                                               << ", "
+                                                                               << result);
 
                         if(processing_time < min_proc_time)
                         {
@@ -655,8 +653,7 @@ ConvOclDirectFwdLegacyExhaustiveSearch::SearchImpl(const ConvolutionContext& par
                                     }
 
                                     is_passed = true;
-                                    MIOPEN_LOG_T("##"
-                                                 << "(n_current, n_failed, n_runs_total): "
+                                    MIOPEN_LOG_T("##(n_current, n_failed, n_runs_total): "
                                                  << run_counter
                                                  << " / "
                                                  << failed_counter
