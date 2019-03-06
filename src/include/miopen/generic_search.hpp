@@ -386,8 +386,7 @@ auto GenericSearch(const Solver s,
                                           current_solution,
                                           elapsed_time);
         }
-        MIOPEN_LOG_T("##"
-                     << "(n_current, n_failed, n_runs_total):  "
+        MIOPEN_LOG_T("##(n_current, n_failed, n_runs_total):  "
                      << n_current
                      << '/'
                      << n_failed
