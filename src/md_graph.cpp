@@ -572,7 +572,7 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
         vba_leaf->default_args[19].op_idx = 2;
 
         FusionMDGraph_Edge_Map edg_activ_relu;
-        edg_activ_relu["constraints"] = {"activ_mode == miopenActivationRELU", "weight = 0"};
+        edg_activ_relu["constraints"] = {"activ_mode == miopenActivationRELU", "weight === 0"};
         g.AddEdge(vb, vba_leaf, edg_activ_relu);
 
         FusionMDGraph_Edge_Map edg_activ_leaky_relu;
@@ -641,7 +641,7 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
             // high priority edge for 3x3 kernels
             FusionMDGraph_Edge_Map map_wino_conv_s2_modd_xe3;
             map_wino_conv_s2_modd_xe3["constraints"] = {
-                "stride == 2",
+                "stride_h == 2",
                 "(x == 3) & (y == 3)",
                 "padded_y === (y ~ 6)",
                 "(x % 6) != 1",
@@ -677,7 +677,7 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
 
             FusionMDGraph_Edge_Map edg_activ_leaky_relu_s2;
             edg_activ_leaky_relu_s2["constraints"] = {"activ_mode == miopenActivationLEAKYRELU",
-                                                      "weight == 0"};
+                                                      "weight === 0"};
 
             g.AddEdge(bias_s2, vba_leaf_s2, edg_activ_leaky_relu_s2);
 
@@ -724,10 +724,14 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
                                            "dilation_w == 1",
                                            "x == 1",
                                            "y == 1",
-                                           "c <= (2^16)",
-                                           "k <= (2^16)",
-                                           "(c * iH * iW * 4) <= (2^24)",
-                                           "(k * oH * oW * 4) <= (2^24)",
+                                           "c < (2^16)",
+                                           "k < (2^16)",
+                                           "iN < (2^16)",
+                                           "(c * iH * iW * 4) < (2^24)",
+                                           "(k * oH * oW * 4) < (2^24)",
+                                           "(iN * c * iH * iW) < (2^29)",
+                                           "(iN * k * oH * oW) < (2^29)",
+                                           "(c * k) < (2^29)",
                                            "precision == miopenFloat",
                                            "weight === 50",
                                            "algo === miopenConvolutionFwdAlgoDirect"};
@@ -758,23 +762,30 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
                                                             true);
             FusionMDGraph_Edge_Map map_asm_conv;
 
-            map_asm_conv["constraints"] = {"pad_h == 0",
-                                           "pad_w == 0",
-                                           "stride_h == 1",
-                                           "stride_w == 1",
-                                           "dilation_h == 1",
-                                           "dilation_w == 1",
-                                           "x == 1",
-                                           "y == 1",
-                                           "c <= (2^16)",
-                                           "k <= (2^16)",
-                                           "(c * iH * iW * 4) <= (2^24)",
-                                           "(k * oH * oW * 4) <= (2^24)",
-                                           "precision == miopenHalf",
-                                           "(c % 2) == 0",
-                                           "(k % 2) == 0",
-                                           "weight === 50",
-                                           "algo === miopenConvolutionFwdAlgoDirect"};
+            map_asm_conv["constraints"] = {
+                "pad_h == 0",
+                "pad_w == 0",
+                "stride_h == 1",
+                "stride_w == 1",
+                "dilation_h == 1",
+                "dilation_w == 1",
+                "x == 1",
+                "y == 1",
+                "c < (2^16)",
+                "k < (2^16)",
+                "iN < (2^16)",
+                "k >= 4",
+                "(oH * oW) >= 2", // (4 / elements_in_dword); elements_in_dword = 2
+                "(c * iH * iW * 4) < (2^24)",
+                "(k * oH * oW * 4) < (2^24)",
+                "(iN * c * iH * iW) < (2^29)",
+                "(iN * k * oH * oW) < (2^29)",
+                "(c * k) < (2^29)",
+                "precision == miopenHalf",
+                "(c % 2) == 0",
+                "(k % 2) == 0",
+                "weight === 50",
+                "algo === miopenConvolutionFwdAlgoDirect"};
 
             g.AddEdge(nullptr, conv_v, map_asm_conv);
             g.AddEdge(conv_v, bias_v, empty_map);
@@ -817,8 +828,8 @@ void FusionMDGraph::InitConv(FusionMDGraph& g)
                 map_conv_bias["constraints"].emplace_back("precision == miopenFloat");
                 map_conv_bias["constraints"].emplace_back("pad_h == 0");
                 map_conv_bias["constraints"].emplace_back("pad_w == 0");
-                map_conv_bias["constraints"].emplace_back("u == 1");
-                map_conv_bias["constraints"].emplace_back("v == 1");
+                map_conv_bias["constraints"].emplace_back("stride_h == 1");
+                map_conv_bias["constraints"].emplace_back("stride_w == 1");
             }
 
             g.AddEdge(nullptr, conv_v, map_conv_bias);

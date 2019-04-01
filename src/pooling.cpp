@@ -26,6 +26,7 @@
 #include <miopen/pooling.hpp>
 #include <miopen/logger.hpp>
 #include <miopen/tensor.hpp>
+#include <miopen/datatype.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -54,23 +55,30 @@ PoolingDescriptor::PoolingDescriptor(miopenPoolingMode_t m,
       strides(pstrides, pstrides + size),
       pads(ppads, ppads + size),
       mode(m),
-      pmode(pm)
+      pmode(pm),
+      indexType(miopenIndexUint8)
 {
 }
 
 PoolingDescriptor::PoolingDescriptor(miopenPoolingMode_t m,
                                      miopenPaddingMode_t pm,
-                                     std::vector<int> plens,
-                                     std::vector<int> pstrides,
-                                     std::vector<int> ppads)
-    : lens(plens), strides(pstrides), pads(ppads), mode(m), pmode(pm)
+                                     const std::vector<int>& plens,
+                                     const std::vector<int>& pstrides,
+                                     const std::vector<int>& ppads)
+    : lens(plens), strides(pstrides), pads(ppads), mode(m), pmode(pm), indexType(miopenIndexUint8)
 {
 }
 
+void PoolingDescriptor::SetIndexType(miopenIndexType_t index_type) { indexType = index_type; }
+
+miopenIndexType_t PoolingDescriptor::GetIndexType() const { return indexType; }
+
 miopenPoolingMode_t PoolingDescriptor::GetMode() const { return (mode); }
+
 miopenPaddingMode_t PoolingDescriptor::GetPaddingMode() const { return (pmode); }
 
 const std::vector<int>& PoolingDescriptor::GetLengths() const { return lens; }
+
 const std::vector<int>& PoolingDescriptor::GetStrides() const { return strides; }
 
 const std::vector<int>& PoolingDescriptor::GetPads() const { return pads; }
@@ -84,17 +92,17 @@ int PoolingDescriptor::GetSize() const
 }
 
 std::tuple<std::size_t, std::size_t, std::size_t, std::size_t>
-PoolingDescriptor::GetForwardOutputDim(const TensorDescriptor& tensorDesc) const
+PoolingDescriptor::GetForwardOutputDim(const TensorDescriptor& xDesc) const
 {
 
-    assert(tensorDesc.GetLengths().size() == 4);
+    assert(xDesc.GetLengths().size() == 4);
 
     std::size_t input_n;
     std::size_t input_c;
     std::size_t input_h;
     std::size_t input_w;
 
-    std::tie(input_n, input_c, input_h, input_w) = miopen::tien<4>(tensorDesc.GetLengths());
+    std::tie(input_n, input_c, input_h, input_w) = miopen::tien<4>(xDesc.GetLengths());
 
     int stride_h, stride_w, pad_h, pad_w, window_h, window_w;
     std::tie(stride_h, stride_w) = miopen::tien<2>(GetStrides());
@@ -109,33 +117,43 @@ PoolingDescriptor::GetForwardOutputDim(const TensorDescriptor& tensorDesc) const
 
     auto output_h = std::max<std::ptrdiff_t>(
         1,
-        std::ptrdiff_t(std::ceil((input_h + 2 * pad_h - window_h) / static_cast<float>(stride_h)) +
+        std::ptrdiff_t(std::ceil(static_cast<float>(input_h + 2 * pad_h - window_h) /
+                                 static_cast<float>(stride_h)) +
                        1));
     auto output_w = std::max<std::ptrdiff_t>(
         1,
-        std::ptrdiff_t(std::ceil((input_w + 2 * pad_w - window_w) / static_cast<float>(stride_w)) +
+        std::ptrdiff_t(std::ceil(static_cast<float>(input_w + 2 * pad_w - window_w) /
+                                 static_cast<float>(stride_w)) +
                        1));
 
     if(_pMode == miopenPaddingSame)
     {
-        output_h = std::ceil(static_cast<double>(input_h) / stride_h);
-        output_w = std::ceil(static_cast<double>(input_w) / stride_w);
+        output_h = std::ceil(static_cast<double>(input_h) / static_cast<double>(stride_h));
+        output_w = std::ceil(static_cast<double>(input_w) / static_cast<double>(stride_w));
     }
     else if(_pMode == miopenPaddingValid)
     {
-        output_h = std::ceil(static_cast<double>(input_h - window_h + 1) / stride_h);
-        output_w = std::ceil(static_cast<double>(input_w - window_w + 1) / stride_w);
+        output_h =
+            std::ceil(static_cast<double>(input_h - window_h + 1) / static_cast<double>(stride_h));
+        output_w =
+            std::ceil(static_cast<double>(input_w - window_w + 1) / static_cast<double>(stride_w));
     }
 
     return std::make_tuple(input_n, input_c, output_h, output_w);
 }
 
-TensorDescriptor PoolingDescriptor::GetForwardOutputTensor(const TensorDescriptor& tensorDesc) const
+TensorDescriptor PoolingDescriptor::GetForwardOutputTensor(const TensorDescriptor& xDesc) const
 {
-    auto dims = this->GetForwardOutputDim(tensorDesc);
+    auto dims = this->GetForwardOutputDim(xDesc);
     return TensorDescriptor(
-        tensorDesc.GetType(),
+        xDesc.GetType(),
         {std::get<0>(dims), std::get<1>(dims), std::get<2>(dims), std::get<3>(dims)});
+}
+
+std::size_t PoolingDescriptor::GetWorkSpaceSize(const TensorDescriptor& yDesc) const
+{
+    return GetMode() == miopenPoolingMax ? yDesc.GetElementSize() * get_data_size(GetIndexType())
+                                         : 0;
 }
 
 std::ostream& operator<<(std::ostream& stream, const PoolingDescriptor& x)

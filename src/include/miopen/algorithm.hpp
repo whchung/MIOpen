@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2017 Advanced Micro Devices, Inc.
+ * Copyright (c) 2019 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,46 +23,25 @@
  * SOFTWARE.
  *
  *******************************************************************************/
-#include "miopen_kernels.h"
+#ifndef GUARD_MLOPEN_ALGORITHM_HPP
+#define GUARD_MLOPEN_ALGORITHM_HPP
+
 #include <algorithm>
-#include <map>
-#include <miopen/kernel.hpp>
-#include <miopen/stringutils.hpp>
 
 namespace miopen {
 
-const std::map<std::string, std::string>& kernels()
+template <typename Range, typename Predicate>
+bool any_of(const Range& r, Predicate p)
 {
-    static const std::map<std::string, std::string> data{${INIT_KERNELS}};
-    return data;
+    return std::any_of(r.begin(), r.end(), p);
 }
 
-std::string GetKernelSrc(std::string name)
+template <typename Range, typename Predicate>
+bool all_of(const Range& r, Predicate p)
 {
-    // Use the base name of the string
-    int start  = 0;
-    auto slash = static_cast<int>(name.find_last_of("/\\"));
-    if(slash != std::string::npos)
-    {
-        start = slash + 1;
-    }
-
-    int len = name.size();
-    auto ex = static_cast<int>(name.rfind('.'));
-    if(ex != std::string::npos)
-    {
-        len = ex - start;
-    }
-
-    auto key = name.substr(start, len);
-    // Convert to uppercase
-    std::transform(key.begin(), key.end(), key.begin(), ::toupper);
-
-    auto it = kernels().find(key);
-    if(it == kernels().end())
-        MIOPEN_THROW("Failed to load kernel source: " + key);
-
-    return it->second;
+    return std::all_of(r.begin(), r.end(), p);
 }
 
 } // namespace miopen
+
+#endif

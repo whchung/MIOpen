@@ -42,15 +42,46 @@ bool ConvOclDirectFwd::IsApplicable(const ConvolutionContext& params) const
         && (params.GetBackwardPadW() < 0 || params.GetBackwardPadH() < 0))
         return false;
 
+    // Factored out from ConvolutionDescriptor::IsDirectSupported(), which is now dissmissed:
+    if (params.group_counts == 1)
+    {
+        const auto& p = params; //alias
+        const bool supported =
+            ((p.kernel_size_h == p.kernel_size_w)
+              && (p.kernel_size_h == 3
+                  || p.kernel_size_h == 5
+                  || p.kernel_size_h == 7
+                  || p.kernel_size_h == 9
+                  || p.kernel_size_h == 11))
+            || ((p.kernel_size_w == 10 || p.kernel_size_w == 20)
+                && p.kernel_size_h == 5
+                && p.kernel_stride_h == 2
+                && p.kernel_stride_w == 2
+                && p.pad_h == 0
+                && p.pad_w == 0)
+            /// The following is for #1594. Most likely we can open more configs,
+            /// but that would require thorough testing.
+            || (p.IsFp16()
+                && p.kernel_size_h == 4
+                && p.kernel_size_w == 4
+                && p.pad_h == 0
+                && p.pad_w == 0);
+
+        if (!supported)
+            return false;
+    }
     return params.kernel_stride_w == params.kernel_stride_h
         && params.pad_w == params.pad_h
+        && params.kernel_dilation_w == 1
+        && params.kernel_dilation_h == 1
         /// \todo need to make sure support stride > 2, should support but not tested
         && !(params.kernel_stride_w > 2 || params.kernel_stride_h > 2)
+        /// We have optimized 1x1 kernel for normal conv.
+        && !(params.group_counts == 1 && params.kernel_size_h == 1 && params.kernel_size_w == 1)
         /// \todo Workaround to avoid FP16 precision issue:
         /// While MIOpenConvUni is up to 4x faster than MIOpenCDFGen (even not auto-tuned),
         /// it seems that is has 4x..20x worse precision, and some "test_conv --half" tests fail.
-        && !(params.group_counts == 1 && params.kernel_size_h == 1 && params.kernel_size_w == 1)
-        /// We have optimized 1x1 kernel for normal conv.
+        /// See issue #1626.
         && !(params.direction.IsForward()
             && params.IsFp16()
             && params.kernel_stride_w == 2)
@@ -285,8 +316,7 @@ inline ConvSolution BaseGetSolution(const ConvolutionContext& params,
     int n_alus_perstack = (n_alus_total + result.n_stacks - 1) / result.n_stacks;
 
     int n_read_procs;
-    if((result.grp_tile1 * result.grp_tile0) <=
-       static_cast<float>(result.in_tile1 * result.in_tile0))
+    if((result.grp_tile1 * result.grp_tile0) <= (result.in_tile1 * result.in_tile0))
     {
         n_read_procs = result.grp_tile1 * result.grp_tile0;
     }

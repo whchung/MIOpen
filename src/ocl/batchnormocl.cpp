@@ -240,9 +240,7 @@ void BatchNormForwardTraining(Handle& handle,
                 std::string program_name;
                 std::string parms;
 
-                // const std::string name = params.GetStream().GetDeviceName();
-                // if ((variant == 3)&&(bfpmixparm == true)&&(name == "gfx906"))
-                if((variant == 3) && (bfpmixparm) && (n < 65))
+                if((variant == 3) && (bfpmixparm) && (n <= 64) && (n % 2 == 0))
                 {
                     kernel_name  = "gcnAsmBNFwdTrainSpatial";
                     program_name = "gcnAsmBNFwdTrainSpatial.s";
@@ -257,7 +255,7 @@ void BatchNormForwardTraining(Handle& handle,
                             f32 = 0;
                         }
                     } NHW_value;
-                    NHW_value.f32 = in_nhw / (in_nhw - 1.0);
+                    NHW_value.f32 = static_cast<float>(in_nhw / (in_nhw - 1.0));
 
                     parms = "-Wa,-defsym,MIOPEN_USE_FP16=" +
                             std::to_string(static_cast<int>(bfp16parm)) +
@@ -421,8 +419,7 @@ void BatchNormForwardTraining(Handle& handle,
                 std::string kernel_name;
                 std::string program_name;
                 std::string parms;
-                // if ((variant == 3)&&(bfpmixparm == true)&&(name == "gfx906"))
-                if((variant == 3) && (bfpmixparm) && (n < 65))
+                if((variant == 3) && (bfpmixparm) && (n <= 64) && (n % 2 == 0))
                 {
                     kernel_name  = "gcnAsmBNFwdTrainSpatial";
                     program_name = "gcnAsmBNFwdTrainSpatial.s";
@@ -438,7 +435,7 @@ void BatchNormForwardTraining(Handle& handle,
                         }
                     } NHW_value;
 
-                    NHW_value.f32 = in_nhw / (in_nhw - 1.0);
+                    NHW_value.f32 = static_cast<float>(in_nhw / (in_nhw - 1.0));
 
                     parms = "-Wa,-defsym,MIOPEN_USE_FP16=" +
                             std::to_string(static_cast<int>(bfp16parm)) +

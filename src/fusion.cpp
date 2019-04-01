@@ -70,20 +70,23 @@ miopenStatus_t FusionPlanDescriptor::AddOp(std::shared_ptr<FusionOpDescriptor> d
     desc->GetOutputDesc(output_desc);
     op_map.emplace_back(desc);
     op_count++;
-    is_valid = lu.Advance(desc, [&](const std::string& sym, int& val) -> bool {
-        // check tensor attr
-        if(GetTensorAttr(sym, val))
-            return true;
-        // check op attr
-        if(desc->GetOpAttr(sym, val))
-            return true;
-        // check the values of enum types
-        if(GetEnumVal(sym, val))
-            return true;
-        // check dev attr
-        // if(GetDevAttribute(sym, val, handle))
-        //     return true;
-        return false;
+    is_valid = false;
+    miopen::try_([&] {
+        is_valid = lu.Advance(desc, [&](const std::string& sym, int& val) -> bool {
+            // check tensor attr
+            if(GetTensorAttr(sym, val))
+                return true;
+            // check op attr
+            if(desc->GetOpAttr(sym, val))
+                return true;
+            // check the values of enum types
+            if(GetEnumVal(sym, val))
+                return true;
+            // check dev attr
+            // if(GetDevAttribute(sym, val, handle))
+            //     return true;
+            return false;
+        });
     });
     if(is_valid)
         return miopenStatusSuccess;
@@ -183,11 +186,8 @@ std::ostream& operator<<(std::ostream& stream, const FusionPlanDescriptor& fpd)
 // Conv Forward
 miopenStatus_t ConvForwardOpDescriptor::GetOutputDesc(TensorDescriptor& output_desc)
 {
-    std::size_t n, c, h, w;
-    std::tie(n, c, h, w) = base_desc.GetForwardOutputDim(input_desc, filter_desc);
-    TensorDescriptor desc(input_desc.GetType(), {n, c, h, w});
-    output_desc = desc;
-    return miopenStatusSuccess;
+    return miopen::try_(
+        [&]() { output_desc = base_desc.GetForwardOutputTensor(input_desc, filter_desc); });
 }
 
 miopenStatus_t ConvForwardOpDescriptor::SetArgs(OperatorArgs& args,
@@ -302,9 +302,15 @@ miopenStatus_t ActivFwdFusionOpDescriptor::SetArgs(OperatorArgs& args,
     }
     else if(input_desc.GetType() == miopenHalf)
     {
-        args.ins_arg("activAlpha" + id, OpKernelArg(static_cast<half_float::half>(activAlpha)));
-        args.ins_arg("activBeta" + id, OpKernelArg(static_cast<half_float::half>(activBeta)));
-        args.ins_arg("activGamma" + id, OpKernelArg(static_cast<half_float::half>(activGamma)));
+        args.ins_arg("activAlpha" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activAlpha))); // NOLINT (cppcoreguidelines-narrowing-conversions)
+        args.ins_arg("activBeta" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activBeta))); // NOLINT (cppcoreguidelines-narrowing-conversions)
+        args.ins_arg("activGamma" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activGamma))); // NOLINT (cppcoreguidelines-narrowing-conversions)
     }
     return miopenStatusSuccess;
 }
@@ -336,8 +342,23 @@ std::vector<std::pair<std::string, OpKernelArg>> ActivFwdFusionOpDescriptor::Get
     return keys;
 }
 
-OpKernelArg ActivFwdFusionOpDescriptor::GetOpAttr(const std::string& /* k */) const
+bool ActivFwdFusionOpDescriptor::GetOpAttr(const std::string& sym, int& val) const
 {
+    if(sym == "activ_mode")
+    {
+        val = activMode;
+        return true;
+    }
+    return false;
+}
+
+OpKernelArg ActivFwdFusionOpDescriptor::GetOpAttr(const std::string& k) const
+{
+    int v;
+    if(GetOpAttr(k, v))
+    {
+        return OpKernelArg(v);
+    }
     MIOPEN_THROW(miopenStatusInternalError, "Unknown Activation Op Attribute");
 }
 
@@ -368,9 +389,15 @@ miopenStatus_t ActivBwdFusionOpDescriptor::SetArgs(OperatorArgs& args,
     }
     else if(input_desc.GetType() == miopenHalf)
     {
-        args.ins_arg("activAlpha" + id, OpKernelArg(static_cast<half_float::half>(activAlpha)));
-        args.ins_arg("activBeta" + id, OpKernelArg(static_cast<half_float::half>(activBeta)));
-        args.ins_arg("activGamma" + id, OpKernelArg(static_cast<half_float::half>(activGamma)));
+        args.ins_arg("activAlpha" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activAlpha))); // NOLINT (cppcoreguidelines-narrowing-conversions)
+        args.ins_arg("activBeta" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activBeta))); // NOLINT (cppcoreguidelines-narrowing-conversions)
+        args.ins_arg("activGamma" + id,
+                     OpKernelArg(static_cast<half_float::half>(
+                         activGamma))); // NOLINT (cppcoreguidelines-narrowing-conversions)
         args.ins_arg("activDiffScale" + id,
                      OpKernelArg(static_cast<half_float::half>(activDiffScale)));
     }
@@ -529,7 +556,7 @@ miopenStatus_t BatchNormFwdTrainFusionOpDescriptor::SetArgs(OperatorArgs& args,
     auto epsilon_any          = OpKernelArg(static_cast<double>(epsilon));
     int n, c, h, w;
     std::tie(n, c, h, w) = tien<4>(input_desc.GetLengths());
-    float nhw = n * h * w;
+    auto nhw = static_cast<float>(n * h * w);
 
     auto inhw_any = static_cast<float>(1.0f / nhw);
 
@@ -621,7 +648,7 @@ OpKernelArg BatchNormBwdTrainFusionOpDescriptor::GetOpAttr(const std::string& k)
     {
         int n, h, w;
         std::tie(n, std::ignore, h, w) = tien<4>(input_desc.GetLengths());
-        float nhw = n * h * w;
+        auto nhw = static_cast<float>(n * h * w);
         return OpKernelArg(static_cast<float>(1.0f / nhw));
     }
     else
@@ -1074,7 +1101,7 @@ std::vector<Exec_arg_t> FusionPlanDescriptor::CalcArgOrder(Handle& handle)
         MIOPEN_LOG_I2("Predefined kernel args order not found");
         for(auto sz : arg_sizes) // Populate args for scalars
         {
-            for(auto idx = 0; idx < op_map.size(); idx++)
+            for(std::size_t idx = 0; idx < op_map.size(); idx++)
             {
                 auto key_pair = std::make_pair(idx, sz);
                 if(size_map.count(key_pair) > 0)
@@ -1093,7 +1120,7 @@ std::vector<Exec_arg_t> FusionPlanDescriptor::CalcArgOrder(Handle& handle)
         arg_keys.emplace_back("reserved_input_tensor_ptr", Input_Ptr, sizeof(ConstData_t));
         arg_keys.emplace_back("reserved_output_tensor_ptr", Output_Ptr, sizeof(ConstData_t));
         // add other pointers in op-order
-        for(auto idx = 0; idx < op_map.size(); idx++)
+        for(std::size_t idx = 0; idx < op_map.size(); idx++)
         {
             auto op = op_map.at(idx);
             if(ptr_map.count(idx) > 0)
@@ -1113,7 +1140,7 @@ std::vector<Exec_arg_t> FusionPlanDescriptor::CalcArgOrder(Handle& handle)
             std::vector<Exec_arg_t> padded_args;
             size_t running_sz = arg_keys[0].size;
             padded_args.push_back(arg_keys[0]);
-            for(auto idx = 1; idx < arg_keys.size(); idx++)
+            for(std::size_t idx = 1; idx < arg_keys.size(); idx++)
             {
                 if(arg_keys[idx - 1].size != arg_keys[idx].size)
                 {

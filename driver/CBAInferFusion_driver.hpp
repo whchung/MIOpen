@@ -160,7 +160,7 @@ class CBAInferFusionDriver : public Driver
 
     void startTiming()
     {
-        START_TIME;
+        START_TIME
         return;
     }
 
@@ -176,7 +176,7 @@ class CBAInferFusionDriver : public Driver
         }
 
         miopen::deref(GetHandle()).Finish();
-        STOP_TIME;
+        STOP_TIME
 
         if(WALL_CLOCK)
         {
@@ -510,7 +510,7 @@ int CBAInferFusionDriver<Tgpu, Tref>::SetConvDescriptorFromCmdLineArgs()
     }
 
     miopen::deref(convDesc) = miopen::ConvolutionDescriptor(
-        mode, pmode, {pad_h, pad_w}, {stride_h, stride_w}, {dilation_h, dilation_w});
+        2, mode, pmode, {pad_h, pad_w}, {stride_h, stride_w}, {dilation_h, dilation_w});
     return miopenStatusSuccess;
 }
 

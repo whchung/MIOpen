@@ -62,7 +62,7 @@ struct tensor_elem_gen_integer
         std::array<unsigned long, sizeof...(Ts)> left = {{Xs...}};
         std::array<unsigned long, 5> right            = {{613, 547, 701, 877, 1049}};
         unsigned long dot = std::inner_product(left.begin(), left.end(), right.begin(), 173ul);
-        return dot % max_value;
+        return static_cast<double>(dot % max_value);
     }
 };
 
@@ -254,6 +254,7 @@ struct test_driver
         switch(this->type)
         {
         case miopenHalf: ss << "--half "; break;
+        case miopenInt8x4:
         case miopenInt8: ss << "--int8 "; break;
         case miopenInt32: ss << "--int32 "; break;
         case miopenFloat: ss << "--float "; break;
@@ -340,6 +341,12 @@ struct test_driver
     lazy_generate_tensor(F f, std::initializer_list<X> single, G g)
     {
         return lazy_generate_tensor<F, std::vector<X>, G>(f, single, g);
+    }
+
+    template <class F, class G>
+    generate_tensor_t<std::vector<int>, G> get_tensor(F gen_shapes, G gen_value)
+    {
+        return lazy_generate_tensor([=] { return gen_shapes(batch_factor); }, gen_value);
     }
 
     template <class G = tensor_elem_gen_integer>
