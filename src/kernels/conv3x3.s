@@ -1,9 +1,9 @@
 /*******************************************************************************
  * 
  * MIT License
- * 
- * Copyright (c) 2017 Advanced Micro Devices, Inc.
- * 
+ *
+ * Copyright (c) 2019 Advanced Micro Devices, Inc.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -572,12 +572,11 @@ gcnAsmConv3x3U:
      compute_pgm_rsrc1_sgprs = .AUTO_SGPR_GRANULATED_COUNT
      compute_pgm_rsrc2_tidig_comp_cnt = 1
      compute_pgm_rsrc2_user_sgpr = 2
-     //compute_pgm_rsrc2_lds_size = 0
      kernarg_segment_byte_size = 56
      wavefront_sgpr_count = .AUTO_SGPR_COUNT
      workitem_vgpr_count = .AUTO_VGPR_COUNT
      float_mode = 192
-     //workgroup_group_segment_byte_size = 8192
+     workgroup_group_segment_byte_size = 0
   .end_amd_kernel_code_t
 
 .if accums < linesA || accums < linesB || linesA == linesB
@@ -691,7 +690,7 @@ gcnAsmConv3x3U:
     s_add_u32 s[tmp], s[tmp], s[gid_z]
   .endif
   s_add_u32 s[out_ptr], s[out_ptr], s[tmp]
-  s_addc_u32 s[out_ptr+1], s[out_ptr+1], 0 
+  s_addc_u32 s[out_ptr+1], s[out_ptr+1], 0
   s_mul_i32 s[tmp], s[gid_y], output_line_stride * output_lines_per_wave // output line offset
   .GPR_REUSE tmp, out_img_off
   .GPR_INVALIDATE gid_x
