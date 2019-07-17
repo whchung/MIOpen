@@ -1,6 +1,7 @@
 
 ## MIOpen Release notes
 
+
 ### 02/06/2019 [ 1.7.1 ]
 
 - This release contains minor bug fixes and performance improvements.
@@ -31,7 +32,6 @@ Known Issues:
 - Group convolutions backwards weights performance has been improved
 - Logging across the library has been improved
 - Performance database has been updated
-
   
 Changes:
 
