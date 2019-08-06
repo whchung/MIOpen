@@ -1,3 +1,7 @@
+# test commands
+- MIOPEN_LOG_LEVEL=6 MIOPEN_DEBUG_CONV_IMPLICIT_GEMM=1 ./bin/MIOpenDriver conv -t 1 -V 0 -F 1 -s 0 -W 112 -H 112 -c 64 -n 128 -k 128 -y 3 -x 3 -u 1 -v 1
+- MIOPEN_LOG_LEVEL=6 ./bin/MIOpenDriver conv -t 1 -V 0 -F 1 -s 0 -W 112 -H 112 -c 64 -n 128 -k 128 -y 3 -x 3 -u 1 -v 1
+
 # MIOpen
 
 AMD's library for high performance machine learning primitives. 

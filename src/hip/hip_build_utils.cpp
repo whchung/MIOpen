@@ -61,9 +61,12 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
     params += " ";
     auto bin_file = tmp_dir->path / (filename + ".o");
     // compile with hcc
-    auto env = std::string("KMOPTLLC=-mattr=+enable-ds128");
+    auto env = std::string("KMOPTLLC=-mattr=+enable-ds128 KMDUMPLLVM=1");
+    MIOPEN_LOG_I2("HipBuild " << env << " " << HIP_COMPILER << params << filename << " -o " << bin_file.string());
     tmp_dir->Execute(env + std::string(" ") + HIP_COMPILER,
                      params + filename + " -o " + bin_file.string());
+
+    MIOPEN_LOG_I2("HipBuild LLVM IR dump at: " << tmp_dir->path);
     if(!boost::filesystem::exists(bin_file))
         MIOPEN_THROW(filename + " failed to compile");
     // call extract kernel

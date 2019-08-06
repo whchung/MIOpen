@@ -29,6 +29,7 @@
 #include <miopen/hipoc_program.hpp>
 #include <miopen/kernel.hpp>
 #include <miopen/kernel_warnings.hpp>
+#include <miopen/logger.hpp>
 #include <miopen/stringutils.hpp>
 #include <miopen/tmp_dir.hpp>
 #include <miopen/write_file.hpp>
@@ -69,6 +70,7 @@ struct HIPOCProgramImpl
     std::string name;
     std::string dev_name;
     boost::filesystem::path hsaco_file;
+    boost::filesystem::path bitcode_file;
     hipModulePtr module;
     boost::optional<TmpDir> dir;
     void BuildModule(const std::string& program_name,
@@ -81,6 +83,7 @@ struct HIPOCProgramImpl
         dir.emplace(filename);
 
         hsaco_file = dir->path / (filename + ".o");
+        bitcode_file = dir->path / (filename + ".bc");
         std::string src;
         if(kernel_src.empty())
             src = is_kernel_str ? program_name : GetKernelSrc(program_name);
@@ -114,7 +117,11 @@ struct HIPOCProgramImpl
 #else
             params += " -Wno-everything";
 #endif
+            MIOPEN_LOG_I2("HIPOCProgramImpl::BuildModule " << HIP_OC_COMPILER << params << " " << filename << " -o " << hsaco_file.string());
             dir->Execute(HIP_OC_COMPILER, params + " " + filename + " -o " + hsaco_file.string());
+
+            MIOPEN_LOG_I2("HIPOCProgramImpl::BuildModule LLVM IR bitcode " << HIP_OC_COMPILER << params << " " << filename << " -o " << bitcode_file.string() + " -c");
+            dir->Execute(HIP_OC_COMPILER, params + " " + filename + " -o " + bitcode_file.string() + " -c");
         }
         if(!boost::filesystem::exists(hsaco_file))
             MIOPEN_THROW("Cant find file: " + hsaco_file.string());
