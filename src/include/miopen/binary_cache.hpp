@@ -36,6 +36,9 @@ boost::filesystem::path GetCacheFile(const std::string& device,
                                      const std::string& name,
                                      const std::string& args,
                                      bool is_kernel_str);
+boost::filesystem::path GetCacheLLVMIR(const std::string& device,
+                                       const std::string& name,
+                                       const std::string& args);
 
 boost::filesystem::path GetCachePath();
 std::string LoadBinary(const std::string& device,
@@ -47,6 +50,10 @@ void SaveBinary(const boost::filesystem::path& binary_path,
                 const std::string& name,
                 const std::string& args,
                 bool is_kernel_str = false);
+void SaveLLVMIR(const boost::filesystem::path& binary_path,
+                const std::string& device,
+                const std::string& name,
+                const std::string& args);
 
 } // namespace miopen
 

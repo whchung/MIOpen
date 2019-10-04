@@ -51,8 +51,9 @@ hipModulePtr CreateModule(const boost::filesystem::path& hsaco_file)
 
 struct HIPOCProgramImpl
 {
-    HIPOCProgramImpl(const std::string& program_name, const boost::filesystem::path& hsaco)
-        : name(program_name), hsaco_file(hsaco)
+    HIPOCProgramImpl(const std::string& program_name, const boost::filesystem::path& hsaco,
+                     const boost::filesystem::path& llvmir)
+        : name(program_name), hsaco_file(hsaco), llvmir_file(llvmir)
     {
         this->module = CreateModule(this->hsaco_file);
     }
@@ -69,6 +70,7 @@ struct HIPOCProgramImpl
     std::string name;
     std::string dev_name;
     boost::filesystem::path hsaco_file;
+    boost::filesystem::path llvmir_file;
     hipModulePtr module;
     boost::optional<TmpDir> dir;
     void BuildModule(const std::string& program_name,
@@ -81,6 +83,7 @@ struct HIPOCProgramImpl
         dir.emplace(filename);
 
         hsaco_file = dir->path / (filename + ".o");
+        llvmir_file = dir->path / (filename + ".bc");
         std::string src;
         if(kernel_src.empty())
             src = is_kernel_str ? program_name : GetKernelSrc(program_name);
@@ -102,7 +105,7 @@ struct HIPOCProgramImpl
 #else
             params += " -Wno-everything";
 #endif
-            hsaco_file = HipBuild(dir, filename, src, params, dev_name);
+            std::tie(hsaco_file, llvmir_file) = HipBuild(dir, filename, src, params, dev_name, /*keep_llvmir=*/true);
         }
         else
         {
@@ -132,13 +135,16 @@ HIPOCProgram::HIPOCProgram(const std::string& program_name,
 {
 }
 
-HIPOCProgram::HIPOCProgram(const std::string& program_name, const boost::filesystem::path& hsaco)
-    : impl(std::make_shared<HIPOCProgramImpl>(program_name, hsaco))
+HIPOCProgram::HIPOCProgram(const std::string& program_name, const boost::filesystem::path& hsaco,
+                           const boost::filesystem::path& llvmir)
+    : impl(std::make_shared<HIPOCProgramImpl>(program_name, hsaco, llvmir))
 {
 }
 
 hipModule_t HIPOCProgram::GetModule() const { return this->impl->module.get(); }
 
 boost::filesystem::path HIPOCProgram::GetBinary() const { return this->impl->hsaco_file; }
+
+boost::filesystem::path HIPOCProgram::GetLLVMIR() const { return this->impl->llvmir_file; }
 
 } // namespace miopen

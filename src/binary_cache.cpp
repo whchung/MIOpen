@@ -82,6 +82,14 @@ boost::filesystem::path GetCacheFile(const std::string& device,
     return GetCachePath() / miopen::md5(device + ":" + args) / filename;
 }
 
+boost::filesystem::path GetCacheLLVMIR(const std::string& device,
+                                       const std::string& name,
+                                       const std::string& args)
+{
+    std::string filename = name + ".bc";
+    return GetCachePath() / miopen::md5(device + ":" + args) / filename;
+}
+
 std::string LoadBinary(const std::string& device,
                        const std::string& name,
                        const std::string& args,
@@ -112,6 +120,22 @@ void SaveBinary(const boost::filesystem::path& binary_path,
     else
     {
         auto p = GetCacheFile(device, name, args, is_kernel_str);
+        boost::filesystem::create_directories(p.parent_path());
+        boost::filesystem::rename(binary_path, p);
+    }
+}
+void SaveLLVMIR(const boost::filesystem::path& binary_path,
+                const std::string& device,
+                const std::string& name,
+                const std::string& args)
+{
+    if(miopen::IsCacheDisabled())
+    {
+        boost::filesystem::remove(binary_path);
+    }
+    else
+    {
+        auto p = GetCacheLLVMIR(device, name, args);
         boost::filesystem::create_directories(p.parent_path());
         boost::filesystem::rename(binary_path, p);
     }

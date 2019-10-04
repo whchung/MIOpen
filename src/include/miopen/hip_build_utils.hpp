@@ -32,11 +32,13 @@
 #include <boost/optional.hpp>
 
 namespace miopen {
-boost::filesystem::path HipBuild(boost::optional<miopen::TmpDir>& tmp_dir,
+std::pair<boost::filesystem::path, boost::filesystem::path> HipBuild(
+                                 boost::optional<miopen::TmpDir>& tmp_dir,
                                  const std::string& filename,
                                  std::string src,
                                  std::string params,
-                                 const std::string& dev_name);
+                                 const std::string& dev_name,
+                                 bool keep_llvmir = false);
 
 void bin_file_to_str(const boost::filesystem::path& file, std::string& buf);
 } // namespace miopen

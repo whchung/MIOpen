@@ -29,14 +29,17 @@
 #include <miopen/logger.hpp>
 #include <boost/optional.hpp>
 #include <sstream>
+#include <tuple>
 
 namespace miopen {
 
-boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
+std::pair<boost::filesystem::path, boost::filesystem::path> HipBuild(
+                                 boost::optional<TmpDir>& tmp_dir,
                                  const std::string& filename,
                                  std::string src,
                                  std::string params,
-                                 const std::string& dev_name)
+                                 const std::string& dev_name,
+                                 bool keep_llvmir)
 {
 #ifdef __linux__
     const auto isHCC = EndsWith(MIOPEN_HIP_COMPILER, "hcc");
@@ -67,6 +70,9 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
     auto bin_file = tmp_dir->path / (filename + ".o");
     // compile
     auto env = std::string("KMOPTLLC=-mattr=+enable-ds128");
+    if (keep_llvmir) {
+        env += std::string(" KMDUMPLLVM=1");
+    }
     tmp_dir->Execute(env + std::string(" ") + MIOPEN_HIP_COMPILER,
                      params + filename + " -o " + bin_file.string());
     if(!boost::filesystem::exists(bin_file))
@@ -85,11 +91,27 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
             MIOPEN_LOG_E("failed to find *.hsaco in " << hsaco->path().string());
         }
 
-        return hsaco->path();
+        boost::filesystem::path llvmir_file = "";
+        if(keep_llvmir) {
+            auto llvmir =
+               std::find_if(boost::filesystem::directory_iterator{tmp_dir->path},
+                            {},
+                            [](auto entry) { auto stem = entry.path().stem();
+                                             return (entry.path().extension() == ".bc" &&
+                                                     stem.extension() == ".opt"); });
+
+            if(llvmir == boost::filesystem::directory_iterator{})
+            {
+                MIOPEN_LOG_E("failed to find *.bc in " << llvmir->path().string());
+            }
+            llvmir_file = llvmir->path();
+        }
+
+        return std::make_pair(hsaco->path(), llvmir_file);
     }
     else
     {
-        return bin_file;
+        return std::make_pair(bin_file, "");
     }
 #else
     (void)filename;

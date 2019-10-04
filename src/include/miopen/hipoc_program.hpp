@@ -43,10 +43,12 @@ struct HIPOCProgram
                  bool is_kernel_str,
                  std::string dev_name,
                  const std::string& kernel_src);
-    HIPOCProgram(const std::string& program_name, const boost::filesystem::path& hsaco);
+    HIPOCProgram(const std::string& program_name, const boost::filesystem::path& hsaco,
+                 const boost::filesystem::path& llvmir = "");
     std::shared_ptr<const HIPOCProgramImpl> impl;
     hipModule_t GetModule() const;
     boost::filesystem::path GetBinary() const;
+    boost::filesystem::path GetLLVMIR() const;
 };
 } // namespace miopen
 

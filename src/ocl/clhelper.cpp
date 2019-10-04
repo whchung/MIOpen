@@ -171,7 +171,8 @@ ClProgramPtr LoadProgram(cl_context ctx,
         params += HipKernelWarningsString();
 #endif
 #endif
-        auto hsaco_file = HipBuild(dir, program_name, source, params, device_name);
+        boost::filesystem::path llvmir_file;
+        std::tie(hsaco_file, llvmir_file) = HipBuild(dir, program_name, source, params, device_name);
         // load the hsaco file as a data stream and then load the binary
         std::string buf;
         bin_file_to_str(hsaco_file, buf);

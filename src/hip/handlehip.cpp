@@ -337,6 +337,14 @@ Program Handle::LoadProgram(const std::string& program_name,
         boost::filesystem::copy_file(p.GetBinary(), path);
         miopen::SaveBinary(path, this->GetDeviceName(), program_name, params, is_kernel_str);
 
+        // Save LLVM IR to cache if it exists
+        auto llvmir_file = p.GetLLVMIR();
+        if(boost::filesystem::exists(llvmir_file)) {
+            path = miopen::GetCachePath() / boost::filesystem::unique_path();
+            boost::filesystem::copy_file(llvmir_file, path);
+            miopen::SaveLLVMIR(path, this->GetDeviceName(), program_name, params);
+        }
+
         return p;
     }
     else
