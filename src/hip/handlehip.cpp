@@ -343,12 +343,21 @@ Program Handle::LoadProgram(const std::string& program_name,
             path = miopen::GetCachePath() / boost::filesystem::unique_path();
             boost::filesystem::copy_file(llvmir_file, path);
             miopen::SaveLLVMIR(path, this->GetDeviceName(), program_name, params);
+            auto cache_llvmir = miopen::GetCacheLLVMIR(this->GetDeviceName(), program_name, params);
+            std::cout << "kernel_path " << cache_llvmir << "\n";
+            std::cout << "kernel_name " << "TBD" << "\n";
         }
 
         return p;
     }
     else
     {
+        // Load LLVM IR if it's available in the cache
+        auto cache_llvmir = miopen::GetCacheLLVMIR(this->GetDeviceName(), program_name, params);
+        if(boost::filesystem::exists(cache_llvmir)) {
+            std::cout << "kernel_path " << cache_llvmir << "\n";
+            std::cout << "kernel_name " << "TBD" << "\n";
+        }
         return HIPOCProgram{program_name, cache_file};
     }
 }
