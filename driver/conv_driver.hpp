@@ -270,6 +270,8 @@ class ConvDriver : public Driver
                                   miopenTensorDescriptor_t& tensorDesc,
                                   Tref* data) const;
     void TrySaveVerificationCache(const std::string& file_name, std::vector<Tref>& data) const;
+
+    bool keep_llvmir = false;
 };
 
 // Check if int8 type tensor x and w need to be transformed to a pack of 4 elements along channel
@@ -308,6 +310,8 @@ int ConvDriver<Tgpu, Tref>::ParseCmdLineArgs(int argc, char* argv[])
 
     if(solution_value >= 0)
         immediate_solution = solution_value;
+
+    keep_llvmir = (inflags.GetValueInt("bitcode") != 0);
 
     return 0;
 }
@@ -439,6 +443,7 @@ int ConvDriver<Tgpu, Tref>::AddCmdLineArgs()
                          "\n>0 Immediate mode, build and run solution_id = N"
                          "\n<0 Use Find() API (Default=-1)",
                          "int");
+    inflags.AddInputFlag("bitcode", 'O', "0", "Enable bitcode compilation mode (Default=0)", "int");
 
     return 0;
 }
