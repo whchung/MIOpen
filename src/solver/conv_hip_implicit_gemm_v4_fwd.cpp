@@ -441,6 +441,25 @@ PerformanceImplicitGemm::PerformanceImplicitGemm(int BPerBlock_,
 {
 }
 
+static std::string ConstructKernelName(const ConvolutionContext& ctx, const std::string& stem) {
+    // construct kernel_name based on n, c, H, W, k, y, x, u, v, p, q, l, j
+    std::string kernel_name = stem +
+        "_n_" + std::to_string(ctx.batch_sz) +
+        "_c_" + std::to_string(ctx.n_inputs) +
+        "_H_" + std::to_string(ctx.in_height) +
+        "_W_" + std::to_string(ctx.in_width) +
+        "_k_" + std::to_string(ctx.n_outputs) +
+        "_y_" + std::to_string(ctx.kernel_size_h) +
+        "_x_" + std::to_string(ctx.kernel_size_w) +
+        "_u_" + std::to_string(ctx.kernel_stride_h) +
+        "_v_" + std::to_string(ctx.kernel_stride_w) +
+        "_p_" + std::to_string(ctx.pad_h) +
+        "_q_" + std::to_string(ctx.pad_w) +
+        "_l_" + std::to_string(ctx.kernel_dilation_h) +
+        "_j_" + std::to_string(ctx.kernel_dilation_w);
+    return kernel_name;
+}
+
 ConvSolution ConvHipImplicitGemmV4Fwd::GetSolution(const ConvolutionContext& ctx,
                                                    const PerformanceImplicitGemm& config,
                                                    const bool) const
@@ -489,8 +508,7 @@ ConvSolution ConvHipImplicitGemmV4Fwd::GetSolution(const ConvolutionContext& ctx
     construction_parameters.kernel_file =
         "gridwise_convolution_implicit_gemm_v4_nchw_kcyx_nkhw_lds_double_buffer.cpp";
 
-    construction_parameters.kernel_name =
-        "gridwise_convolution_implicit_gemm_v4_nchw_kcyx_nkhw_lds_double_buffer";
+    construction_parameters.kernel_name = ConstructKernelName(ctx, "gridwise_convolution_implicit_gemm_v4_nchw_kcyx_nkhw_lds_double_buffer");
 
     std::size_t WeiBlockCopySubLengths_E = EPerBlock / config.WeiBlockCopyClusterLengths_E;
     std::size_t WeiBlockCopySubLengths_K = KPerBlock / config.WeiBlockCopyClusterLengths_K;

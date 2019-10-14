@@ -38,7 +38,8 @@ std::pair<boost::filesystem::path, boost::filesystem::path> HipBuild(
                                  std::string src,
                                  std::string params,
                                  const std::string& dev_name,
-                                 bool keep_llvmir = false);
+                                 bool keep_llvmir,
+                                 const std::string& kernel_name);
 
 void bin_file_to_str(const boost::filesystem::path& file, std::string& buf);
 } // namespace miopen

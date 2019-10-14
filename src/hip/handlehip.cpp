@@ -321,7 +321,8 @@ KernelInvoke Handle::Run(Kernel k)
 Program Handle::LoadProgram(const std::string& program_name,
                             std::string params,
                             bool is_kernel_str,
-                            const std::string& kernel_src)
+                            const std::string& kernel_src,
+                            const std::string& kernel_name)
 {
     this->impl->set_ctx();
     params += " -mcpu=" + this->GetDeviceName();
@@ -330,7 +331,7 @@ Program Handle::LoadProgram(const std::string& program_name,
     if(cache_file.empty())
     {
         auto p =
-            HIPOCProgram{program_name, params, is_kernel_str, this->GetDeviceName(), kernel_src};
+            HIPOCProgram{program_name, params, is_kernel_str, this->GetDeviceName(), kernel_src, kernel_name};
 
         // Save to cache
         auto path = miopen::GetCachePath() / boost::filesystem::unique_path();
@@ -345,7 +346,7 @@ Program Handle::LoadProgram(const std::string& program_name,
             miopen::SaveLLVMIR(path, this->GetDeviceName(), program_name, params);
             auto cache_llvmir = miopen::GetCacheLLVMIR(this->GetDeviceName(), program_name, params);
             std::cout << "kernel_path " << cache_llvmir << "\n";
-            std::cout << "kernel_name " << "TBD" << "\n";
+            std::cout << "kernel_name " << kernel_name << "\n";
         }
 
         return p;
@@ -356,7 +357,7 @@ Program Handle::LoadProgram(const std::string& program_name,
         auto cache_llvmir = miopen::GetCacheLLVMIR(this->GetDeviceName(), program_name, params);
         if(boost::filesystem::exists(cache_llvmir)) {
             std::cout << "kernel_path " << cache_llvmir << "\n";
-            std::cout << "kernel_name " << "TBD" << "\n";
+            std::cout << "kernel_name " << kernel_name << "\n";
         }
         return HIPOCProgram{program_name, cache_file};
     }

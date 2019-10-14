@@ -61,8 +61,9 @@ struct HIPOCProgramImpl
                      std::string params,
                      bool is_kernel_str,
                      std::string _dev_name,
-                     const std::string& kernel_src)
-        : name(program_name), dev_name(_dev_name)
+                     const std::string& kernel_src,
+                     const std::string& _kernel_name)
+        : name(program_name), dev_name(_dev_name), kernel_name(_kernel_name)
     {
         this->BuildModule(program_name, params, is_kernel_str, kernel_src);
         this->module = CreateModule(this->hsaco_file);
@@ -73,6 +74,7 @@ struct HIPOCProgramImpl
     boost::filesystem::path llvmir_file;
     hipModulePtr module;
     boost::optional<TmpDir> dir;
+    std::string kernel_name;
     void BuildModule(const std::string& program_name,
                      std::string params,
                      bool is_kernel_str,
@@ -105,7 +107,7 @@ struct HIPOCProgramImpl
 #else
             params += " -Wno-everything";
 #endif
-            std::tie(hsaco_file, llvmir_file) = HipBuild(dir, filename, src, params, dev_name, /*keep_llvmir=*/true);
+            std::tie(hsaco_file, llvmir_file) = HipBuild(dir, filename, src, params, dev_name, /*keep_llvmir=*/true, kernel_name);
         }
         else
         {
@@ -129,9 +131,10 @@ HIPOCProgram::HIPOCProgram(const std::string& program_name,
                            std::string params,
                            bool is_kernel_str,
                            std::string dev_name,
-                           const std::string& kernel_src)
+                           const std::string& kernel_src,
+                           const std::string& kernel_name)
     : impl(std::make_shared<HIPOCProgramImpl>(
-          program_name, params, is_kernel_str, dev_name, kernel_src))
+          program_name, params, is_kernel_str, dev_name, kernel_src, kernel_name))
 {
 }
 

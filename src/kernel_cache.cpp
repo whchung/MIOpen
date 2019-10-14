@@ -195,7 +195,7 @@ Kernel KernelCache::AddKernel(Handle& h,
                                       vgd,
                                       params);
         }
-        program = h.LoadProgram(program_name, params, is_kernel_miopengemm_str, kernel_src);
+        program = h.LoadProgram(program_name, params, is_kernel_miopengemm_str, kernel_src, kernel_name);
         program_map[std::make_pair(program_name, params)] = program;
     }
     Kernel kernel{program, kernel_name, vld, vgd};

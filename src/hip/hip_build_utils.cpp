@@ -39,7 +39,8 @@ std::pair<boost::filesystem::path, boost::filesystem::path> HipBuild(
                                  std::string src,
                                  std::string params,
                                  const std::string& dev_name,
-                                 bool keep_llvmir)
+                                 bool keep_llvmir,
+                                 const std::string& kernel_name)
 {
 #ifdef __linux__
     const auto isHCC = EndsWith(MIOPEN_HIP_COMPILER, "hcc");
@@ -54,6 +55,18 @@ std::pair<boost::filesystem::path, boost::filesystem::path> HipBuild(
     }
     src += "\nint main() {}\n";
     WriteFile(src, tmp_dir->path / filename);
+
+
+    std::string kernel_prologue = R"(extern "C" __global__ void )";
+
+    std::string kernel_epilogue = R"((
+    const FLOAT* const __restrict__ p_in_global,
+    const FLOAT* const __restrict__ p_wei_global,
+    FLOAT* const __restrict__ p_out_global))";
+
+    std::string full_kernel_name = kernel_prologue + kernel_name + kernel_epilogue;
+    WriteFile(full_kernel_name, tmp_dir->path / "kernel_name.inc");
+
     if(isHCC)
     {
         params += " -amdgpu-target=" + dev_name;
